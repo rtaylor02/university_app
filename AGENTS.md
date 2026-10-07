@@ -69,6 +69,12 @@ Infra: `docker compose up -d` / `docker compose down`
 - **Resilience**: every OpenFeign client and gateway route using Feign/load-balanced calls must define a Resilience4j circuit breaker + fallback. No silent failures.
 - **Tracing**: Micrometer Tracing (Brave) on every service; Zipkin receives spans automatically. `traceId`/`spanId` must appear in logs.
 - **No cross-service DB access.** Use Feign.
+- **DB migrations (Flyway)**: schema changes live in `src/main/resources/db/migration/VN__name.sql`; set `spring.jpa.hibernate.ddl-auto=validate`. Never `update`/`create-drop` outside local dev.
+- **Error responses**: RFC 7807 `ProblemDetail` across all controllers/services (timestamp, status, title, detail, instance, `traceId`).
+- **Validation**: `@Valid` on every `@RequestBody`; explicit annotations (`@NotBlank`, `@Size`, etc.) on DTO records.
+- **Pagination**: collection endpoints return the standard Spring `Page<T>` JSON shape (`content`, `pageNumber`, `pageSize`, `totalElements`, `totalPages`, `last`).
+- **CORS**: configured only at the api-gateway; disabled on all private services.
+- **Testing**: `@WebMvcTest` for controllers, `@DataJpaTest` for repositories, WireMock for Feign clients, Testcontainers for MySQL in integration tests. Use `./mvnw test` / `./mvnw verify`.
 - Java 25 (Spring Boot 4 baseline). Constructor injection. Records for DTOs.
 - **Lombok**: use `@Getter`/`@Setter`/`@Builder`/`@RequiredArgsConstructor` for services/entities; constructor injection via `@RequiredArgsConstructor` + `final` fields. Do **not** use `@Data` on JPA entities — its `equals`/`hashCode`/`toString` trigger lazy loading and recursion on relations; write equals/hashCode from the business key instead. Keep records for DTOs. Use a Lombok version compatible with Java 25, and enable annotation processing in IDE/CI.
 
@@ -79,6 +85,7 @@ Infra: `docker compose up -d` / `docker compose down`
 3. Gateway (resource server) validates signature/expiry, then forwards the token downstream.
 4. Private services also validate the token independently (defense in depth) and read the caller via `@AuthenticationPrincipal` / principal name.
 5. Key/secret lives in config-server backed by an env var; rotated via redeploy.
+6. Frontend: an Axios request interceptor attaches `Authorization: Bearer <token>` to every gateway call; a response interceptor redirects to `/login` on 401 (expired/invalid token).
 
 ## 7. Recording Changes
 
