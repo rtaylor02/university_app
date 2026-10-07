@@ -13,6 +13,7 @@ microservices, with an API gateway fronting a React UI.
 | API docs | springdoc-openapi / OpenAPI |
 | Frontend | React + Vite, Tailwind CSS, shadcn/ui |
 | Persistence | MySQL (one schema per service), Spring Data JPA |
+| Boilerplate | Lombok (`@Getter`/`@Setter`/`@Builder`/`@RequiredArgsConstructor`; avoid `@Data` on JPA entities) |
 | Messaging | None (sync OpenFeign only) |
 | VCS / CI/CD | Git monorepo, GitHub Actions |
 | Deploy | AWS free tier (EC2 + optional RDS), Docker Compose |
@@ -69,6 +70,7 @@ Infra: `docker compose up -d` / `docker compose down`
 - **Tracing**: Micrometer Tracing (Brave) on every service; Zipkin receives spans automatically. `traceId`/`spanId` must appear in logs.
 - **No cross-service DB access.** Use Feign.
 - Java 25 (Spring Boot 4 baseline). Constructor injection. Records for DTOs.
+- **Lombok**: use `@Getter`/`@Setter`/`@Builder`/`@RequiredArgsConstructor` for services/entities; constructor injection via `@RequiredArgsConstructor` + `final` fields. Do **not** use `@Data` on JPA entities — its `equals`/`hashCode`/`toString` trigger lazy loading and recursion on relations; write equals/hashCode from the business key instead. Keep records for DTOs. Use a Lombok version compatible with Java 25, and enable annotation processing in IDE/CI.
 
 ## 6. Authentication Flow (JWT via Spring Security)
 
